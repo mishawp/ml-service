@@ -1,2 +1,13 @@
-fastapi==0.115.8
-uvicorn==0.34.0
+sqlalchemy
+asyncpg
+psycopg
+psycopg-binary
+alembic
+pydantic
+pydantic-settings
+sqlmodel
+starlette
+fastapi
+uvicorn
+passlib
+python-jose

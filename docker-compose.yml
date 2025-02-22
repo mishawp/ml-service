@@ -5,7 +5,7 @@ services:
     build:
       context: app
       dockerfile: DockerFile
-    image: event-planner-api:latest
+    image: chatbotgpt2:latest
     env_file:
       - ./app/.env
     volumes:
@@ -35,16 +35,15 @@ services:
     restart: on-failure
 
   database:
-    image: postgres:15.11-alpine
-    environment:
-      POSTGRES_DB: mydatabase
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+    image: postgres:16-alpine
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./postgres_data:/var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
 
 volumes:
   rabbitmq_data:
-    driver: local
-  postgres_data:
-    driver: local
