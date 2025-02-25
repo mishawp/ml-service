@@ -3,6 +3,7 @@ from .cost import CostService
 from .payment import PaymentService
 from .person import UserService, AdminService
 from .prediction import PredictionService
+from .mlmodel import MLModelService
 
 __all__ = [
     "ChatService",
@@ -11,4 +12,5 @@ __all__ = [
     "UserService",
     "AdminService",
     "PredictionService",
+    "MLModelService",
 ]

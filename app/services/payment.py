@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from dataclasses import dataclass
 from models.payment import Payment
 
@@ -41,3 +41,6 @@ class PaymentService:
         self.session.delete(payment)
         self.session.commit()
         return payment
+
+    def read_all(self):
+        return self.session.exec(select(Payment)).all()

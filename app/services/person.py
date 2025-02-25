@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 from dataclasses import dataclass
-from models.person import User, Admin
+from models import User, Admin, Payment
 
 
 @dataclass(slots=True)
@@ -84,3 +84,21 @@ class AdminService:
         self.session.delete(admin)
         self.session.commit()
         return admin
+
+    def read_all(self):
+        return self.session.exec(select(Admin)).all()
+
+    def confirm_payment(self, payment_id: int):
+        payment = self.session.get(Payment, payment_id)
+
+        if not payment:
+            raise ValueError(f"Payment with id {payment_id} not found")
+
+        user = self.session.get(User, payment.user_id)
+
+        if payment.status == False:
+            user.balance += payment.amount
+            payment.status = True
+        else:
+            print("The payment has already been confirmed")
+        self.session.commit()

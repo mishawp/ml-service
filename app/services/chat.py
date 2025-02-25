@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from dataclasses import dataclass
 from models.chat import Chat
 
@@ -41,6 +41,9 @@ class ChatService:
         self.session.delete(chat)
         self.session.commit()
         return chat
+
+    def read_all(self):
+        return self.session.exec(select(Chat)).all()
 
     # def open(self) -> list[Prediction]:
     #     pass

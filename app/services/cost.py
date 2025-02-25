@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 from dataclasses import dataclass
 from models.cost import Cost
 
@@ -41,3 +41,6 @@ class CostService:
         self.session.delete(cost)
         self.session.commit()
         return cost
+
+    def read_all(self):
+        return self.session.exec(select(Cost)).all()

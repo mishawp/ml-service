@@ -10,6 +10,7 @@ from services import (
 )
 from database.config import get_settings
 from database.database import get_session, init_db, engine
+from utils.fill_db import fill_db, show_db
 # from fastapi import FastAPI
 # import uvicorn
 
@@ -23,21 +24,8 @@ from database.database import get_session, init_db, engine
 
 if __name__ == "__main__":
     # uvicorn.run("main:app", host="0.0.0.0", port=8080, reload=True)
-
-    test_user = User(email="test@mail.ru", password="test")
-    test_user_2 = User(email="test@mail.ru", password="test")
-    test_user_3 = User(email="test@mail.ru", password="test")
-
     init_db()
     print("Init db has been success")
-
-    with Session(engine) as session:
-        user_service = UserService(session)
-        user_service.create_user(test_user)
-        user_service.create_user(test_user_2)
-        user_service.create_user(test_user_3)
-        users = user_service.read_all()
-
-    print(users, type(users))
-    for user in users:
-        print(f"id: {user.user_id} - {user.email}")
+    fill_db()
+    print("Fill db has been success")
+    show_db()

@@ -1,9 +1,37 @@
-FROM python:3.12.9
+FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
 
-COPY requirements.txt /app/
+# Устанавливаем Python 3.12.9
+# https://medium.com/@prateek.mehra/installing-python-3-9-in-ubuntu-22-04-docker-image-194f9c9f9725
+RUN apt-get update && apt-get install -y \
+    software-properties-common \
+    curl \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update
 
-RUN pip install --upgrade pip && pip install -r /app/requirements.txt
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Moscow
+RUN apt-get install -y \
+    python3.12 \
+    python3.12-dev \
+    && apt-get clean
+    
+# Устанавливаем pip для Python 3.12
+RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
+WORKDIR /app
 
-WORKDIR /app/
+COPY requirements.txt .
 
-CMD ["python", "main.py"]
+RUN pip3.12 install -r requirements.txt
+
+CMD ["python3.12", "main.py"]
+
+
+# FROM python:3.12.9
+
+# COPY requirements.txt /app/
+
+# RUN pip install --upgrade pip && pip install -r /app/requirements.txt
+
+# WORKDIR /app/
+
+# CMD ["python", "main.py"]

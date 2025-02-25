@@ -15,3 +15,10 @@ class Prediction(SQLModel, table=True):
     # chat: "Chat" = Relationship(
     #     back_populates="predictions", cascade_delete=True
     # )
+    # @property
+    # def chat_id(self):
+    #     return self.chat_id
+
+    # @property
+    # def cost_id(self):
+    #     return self.cost_id
