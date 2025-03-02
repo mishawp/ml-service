@@ -10,15 +10,3 @@ class Prediction(SQLModel, table=True):
     chat_id: int = Field(foreign_key="chat", ondelete="CASCADE")
     response: str = Field(default=None)
     model: str = Field(default=None)  # не ясно пока
-
-    # cost: "Cost" = Relationship(back_populates="predictions")
-    # chat: "Chat" = Relationship(
-    #     back_populates="predictions", cascade_delete=True
-    # )
-    # @property
-    # def chat_id(self):
-    #     return self.chat_id
-
-    # @property
-    # def cost_id(self):
-    #     return self.cost_id

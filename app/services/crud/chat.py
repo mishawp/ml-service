@@ -7,17 +7,32 @@ from models.chat import Chat
 class ChatService:
     session: Session
 
-    def create_chat(self, chat: Chat) -> Chat:
+    def create_one(self, chat: Chat) -> Chat:
         self.session.add(chat)
         self.session.commit()
         self.session.refresh(chat)
         return chat
 
-    def read_chat(self, chat_id: int) -> Chat:
+    def read_by_id(self, chat_id: int) -> Chat:
         chat = self.session.get(Chat, chat_id)
         return chat if chat else None
 
-    def update_chat(self, chat_id: int, **kwargs) -> Chat:
+    def read_by_user_id(self, user_id: int) -> list[Chat]:
+        return self.session.exec(
+            select(Chat).where(Chat.user_id == user_id)
+        ).all()
+
+    def read_user_chat(self, chat_id: int, user_id: int) -> Chat:
+        return self.session.exec(
+            select(Chat).where(
+                Chat.chat_id == chat_id and Chat.user_id == user_id
+            )
+        ).first()
+
+    def read_all(self) -> list[Chat]:
+        return self.session.exec(select(Chat)).all()
+
+    def update_by_id(self, chat_id: int, **kwargs) -> Chat:
         chat = self.session.get(Chat, chat_id)
         if not chat:
             raise ValueError(f"Chat with id {chat_id} not found")
@@ -33,7 +48,7 @@ class ChatService:
         self.session.refresh(chat)
         return chat
 
-    def delete_chat(self, chat_id: int) -> Chat:
+    def delete_by_id(self, chat_id: int) -> Chat:
         chat = self.session.get(Chat, chat_id)
         if not chat:
             raise ValueError(f"Chat with id {chat_id} not found")
@@ -41,13 +56,3 @@ class ChatService:
         self.session.delete(chat)
         self.session.commit()
         return chat
-
-    def read_all(self):
-        return self.session.exec(select(Chat)).all()
-
-    # def open(self) -> list[Prediction]:
-    #     pass
-
-    # # может и не нужен
-    # def close(self):
-    #     pass

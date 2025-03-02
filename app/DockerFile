@@ -19,6 +19,11 @@ RUN apt-get install -y \
 RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
 WORKDIR /app
 
+RUN pip3.12 install transformers==4.49.0 \
+torch==2.6.0 \
+torchaudio==2.6.0 \
+torchvision==0.21.0
+
 COPY requirements.txt .
 
 RUN pip3.12 install -r requirements.txt

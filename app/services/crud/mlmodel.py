@@ -5,7 +5,7 @@ from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from dataclasses import dataclass, field
 from typing import Any, ClassVar
 from models import Prediction, User, Chat
-from services import PredictionService
+from services.crud import PredictionService
 
 
 @dataclass(frozen=True)
@@ -17,6 +17,8 @@ class MLModelService:
 
     @classmethod
     def init_model(cls) -> Any:
+        if cls.model is not None:
+            return
         cls.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 
         cls.model = GPT2LMHeadModel.from_pretrained("gpt2").to("cuda")
@@ -58,8 +60,6 @@ class MLModelService:
         chat_id: int,
         cost_id: int,
     ) -> Prediction:
-        # нужна ли проверка на существование в бд user_id и cost_id?
-        # кажется ошибки от субд будет достаточно
         response = self.__validate(request)
         if self.__is_negative_balance(chat_id):
             response += "Negative balance"

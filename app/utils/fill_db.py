@@ -2,7 +2,7 @@ from sqlmodel import Session
 from decimal import Decimal
 from datetime import datetime
 from models import Chat, Cost, Payment, User, Admin, Prediction
-from services import (
+from services.crud import (
     ChatService,
     CostService,
     PaymentService,
@@ -13,6 +13,7 @@ from services import (
 )
 from database.config import get_settings
 from database.database import get_session, init_db, engine
+from auth.hash_password import HashPassword
 
 
 def fill_db():
@@ -20,16 +21,24 @@ def fill_db():
 
     with Session(engine) as session:
         user_service = UserService(session)
-        misha = User(email="misha@mail.ru", password="misha")
-        vlad = User(email="vlad@mail.ru", password="vlad")
-        lesha = User(email="lesha@mail.ru", password="lesha")
-        admin = Admin(email="admin@mail.ru", password="admin")
-        user_service.create_user(misha)
-        user_service.create_user(vlad)
-        user_service.create_user(lesha)
+        misha = User(
+            email="misha@mail.ru", password=HashPassword.create_hash("misha")
+        )
+        vlad = User(
+            email="vlad@mail.ru", password=HashPassword.create_hash("vlad")
+        )
+        lesha = User(
+            email="lesha@mail.ru", password=HashPassword.create_hash("lesha")
+        )
+        admin = Admin(
+            email="admin@mail.ru", password=HashPassword.create_hash("admin")
+        )
+        user_service.create_one(misha)
+        user_service.create_one(vlad)
+        user_service.create_one(lesha)
 
         admin_service = AdminService(session)
-        admin_service.create_admin(admin)
+        admin_service.create_one(admin)
 
         # chats
         misha_chat_1 = Chat(user_id=misha.user_id)
@@ -38,10 +47,10 @@ def fill_db():
         lesha_chat_1 = Chat(user_id=lesha.user_id)
 
         chat_service = ChatService(session)
-        chat_service.create_chat(misha_chat_1)
-        chat_service.create_chat(misha_chat_2)
-        chat_service.create_chat(vlad_chat_1)
-        chat_service.create_chat(lesha_chat_1)
+        chat_service.create_one(misha_chat_1)
+        chat_service.create_one(misha_chat_2)
+        chat_service.create_one(vlad_chat_1)
+        chat_service.create_one(lesha_chat_1)
 
         # payments
         misha_payment_1 = Payment(
@@ -88,17 +97,17 @@ def fill_db():
         )
 
         payment_service = PaymentService(session)
-        payment_service.create_payment(misha_payment_1)
+        payment_service.create_one(misha_payment_1)
         admin_service.confirm_payment(misha_payment_1.payment_id)
-        payment_service.create_payment(misha_payment_2)
+        payment_service.create_one(misha_payment_2)
         admin_service.confirm_payment(misha_payment_2.payment_id)
-        payment_service.create_payment(vlad_payment_1)
+        payment_service.create_one(vlad_payment_1)
         admin_service.confirm_payment(vlad_payment_1.payment_id)
-        payment_service.create_payment(vlad_payment_2)
+        payment_service.create_one(vlad_payment_2)
         admin_service.confirm_payment(vlad_payment_2.payment_id)
-        payment_service.create_payment(lesha_payment_1)
+        payment_service.create_one(lesha_payment_1)
         admin_service.confirm_payment(lesha_payment_1.payment_id)
-        payment_service.create_payment(lesha_payment_2)
+        payment_service.create_one(lesha_payment_2)
         admin_service.confirm_payment(lesha_payment_2.payment_id)
 
         # Costs
@@ -106,7 +115,7 @@ def fill_db():
         cost = Cost(prediction_cost=Decimal("2.0"))
 
         cost_service = CostService(session)
-        cost_service.create_cost(cost)
+        cost_service.create_one(cost)
 
         MLModelService.init_model()
         mlmodel_service = MLModelService(session)
@@ -189,17 +198,17 @@ def fill_db():
             timestamp="2024-12-25T15:55:00",
         )
 
-        prediction_service.create_prediction(misha_pred_1)
-        prediction_service.create_prediction(misha_pred_2)
-        prediction_service.create_prediction(misha_pred_3)
-        prediction_service.create_prediction(vlad_pred_1)
-        prediction_service.create_prediction(vlad_pred_2)
-        prediction_service.create_prediction(vlad_pred_3)
-        prediction_service.create_prediction(vlad_pred_4)
-        prediction_service.create_prediction(lesha_pred_1)
-        prediction_service.create_prediction(lesha_pred_2)
-        prediction_service.create_prediction(lesha_pred_3)
-        prediction_service.create_prediction(lesha_pred_4)
+        prediction_service.create_one(misha_pred_1)
+        prediction_service.create_one(misha_pred_2)
+        prediction_service.create_one(misha_pred_3)
+        prediction_service.create_one(vlad_pred_1)
+        prediction_service.create_one(vlad_pred_2)
+        prediction_service.create_one(vlad_pred_3)
+        prediction_service.create_one(vlad_pred_4)
+        prediction_service.create_one(lesha_pred_1)
+        prediction_service.create_one(lesha_pred_2)
+        prediction_service.create_one(lesha_pred_3)
+        prediction_service.create_one(lesha_pred_4)
 
 
 def show_db():

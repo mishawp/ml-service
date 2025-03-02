@@ -1,23 +1,31 @@
 from sqlmodel import Session, select
 from dataclasses import dataclass
-from models.payment import Payment
+from models import Payment, User
 
 
 @dataclass(slots=True)
 class PaymentService:
     session: Session
 
-    def create_payment(self, payment: Payment) -> Payment:
+    def create_one(self, payment: Payment) -> Payment:
         self.session.add(payment)
         self.session.commit()
         self.session.refresh(payment)
         return payment
 
-    def read_payment(self, payment_id: int) -> Payment:
+    def read_by_id(self, payment_id: int) -> Payment:
         payment = self.session.get(Payment, payment_id)
-        return payment if payment else None
+        return payment
 
-    def update_payment(self, payment_id: int, **kwargs) -> Payment:
+    def read_by_user_id(self, user_id: int) -> list[Payment]:
+        return self.session.exec(
+            select(Payment).where(Payment.user_id == user_id)
+        ).all()
+
+    def read_all(self):
+        return self.session.exec(select(Payment)).all()
+
+    def update_by_id(self, payment_id: int, **kwargs) -> Payment:
         payment = self.session.get(Payment, payment_id)
         if not payment:
             raise ValueError(f"Payment with id {payment_id} not found")
@@ -33,7 +41,7 @@ class PaymentService:
         self.session.refresh(payment)
         return payment
 
-    def delete_payment(self, payment_id: int) -> Payment:
+    def delete_by_id(self, payment_id: int) -> Payment:
         payment = self.session.get(Payment, payment_id)
         if not payment:
             raise ValueError(f"Payment with id {payment_id} not found")
@@ -42,5 +50,8 @@ class PaymentService:
         self.session.commit()
         return payment
 
-    def read_all(self):
-        return self.session.exec(select(Payment)).all()
+    def update_user_balance(self, user: User, payment: Payment) -> None:
+        if payment.status == False:
+            user.balance += payment.amount
+            payment.status = True
+            self.session.commit()
