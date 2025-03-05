@@ -5,13 +5,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from routes.home import route as home_route
 from routes.chat import route as chat_route
 from routes.user import route as user_route
+from database.config import get_db_settings
 from database.database import init_db
-from database.config import get_settings
+from rabbitmq.rabbitmq import (
+    connect_rabbitmq,
+    close_rabbitmq_connection,
+    get_connection,
+)
 from services.crud import MLModelService
 from auth.authenticate import authenticate_cookie
-from utils.fill_db import fill_db, show_db
+from utils.fill_db import fill_db
 
-settings = get_settings()
+settings = get_db_settings()
 app = FastAPI()
 app.include_router(home_route)
 app.include_router(chat_route)
@@ -31,10 +36,15 @@ app.add_middleware(
 
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     init_db()
-    MLModelService.init_model()
-    fill_db()
+    await connect_rabbitmq()
+    await fill_db()
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    await close_rabbitmq_connection()
 
 
 @app.get("/", summary="Вход в систему", tags=["Home"])

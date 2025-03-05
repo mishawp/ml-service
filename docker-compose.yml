@@ -14,6 +14,7 @@ services:
     depends_on:
       - database
       - rabbitmq
+      - consumer
 
   web-proxy:
     image: nginx:alpine3.21
@@ -31,6 +32,9 @@ services:
     ports:
       - "15672:15672"
       - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASS}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     restart: on-failure
@@ -45,6 +49,20 @@ services:
       - POSTGRES_USER=${POSTGRES_USER}
       - PGPASSWORD=${POSTGRES_PASSWORD}
       - POSTGRES_DB=${POSTGRES_DB}
+
+  consumer:
+    build:
+      context: consumer-gpu
+      dockerfile: DockerFile
+    scale: 2
+    runtime: nvidia
+    volumes:
+      - ./consumer-gpu:/app
+    depends_on:
+      - rabbitmq
+      - database
+    env_file:
+      - ./consumer-gpu/.env
 
 volumes:
   rabbitmq_data:

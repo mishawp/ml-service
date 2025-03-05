@@ -11,12 +11,12 @@ from services.crud import (
     PredictionService,
     MLModelService,
 )
-from database.config import get_settings
-from database.database import get_session, init_db, engine
+from database.database import init_db, engine
+from rabbitmq.rabbitmq import get_connection
 from auth.hash_password import HashPassword
 
 
-def fill_db():
+async def fill_db():
     # users/admin
 
     with Session(engine) as session:
@@ -116,99 +116,100 @@ def fill_db():
 
         cost_service = CostService(session)
         cost_service.create_one(cost)
+        async with get_connection().channel() as channel:
+            mlmodel_service = MLModelService(session, channel, misha.email)
+            prediction_service = PredictionService(session)
 
-        MLModelService.init_model()
-        mlmodel_service = MLModelService(session)
-        prediction_service = PredictionService(session)
+            misha_pred_1 = await mlmodel_service.make_prediction(
+                request="When she was walking in the park",
+                chat_id=misha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-11-15T14:00:00",
+            )
 
-        misha_pred_1 = mlmodel_service.make_prediction(
-            request="When she was walking in the park",
-            chat_id=misha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-11-15T14:00:00",
-        )
+            misha_pred_2 = await mlmodel_service.make_prediction(
+                request="He decided to take a different route home",
+                chat_id=misha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-11-15T14:30:00",
+            )
 
-        misha_pred_2 = mlmodel_service.make_prediction(
-            request="He decided to take a different route home",
-            chat_id=misha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-11-15T14:30:00",
-        )
+            misha_pred_3 = await mlmodel_service.make_prediction(
+                request="The sun was setting behind the mountains",
+                chat_id=misha_chat_2.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-12-05T09:45:00",
+            )
 
-        misha_pred_3 = mlmodel_service.make_prediction(
-            request="The sun was setting behind the mountains",
-            chat_id=misha_chat_2.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-12-05T09:45:00",
-        )
+            mlmodel_service.username = vlad.email
+            vlad_pred_1 = await mlmodel_service.make_prediction(
+                request="She found an old book in the attic",
+                chat_id=vlad_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-11-22T18:20:00",
+            )
 
-        vlad_pred_1 = mlmodel_service.make_prediction(
-            request="She found an old book in the attic",
-            chat_id=vlad_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-11-22T18:20:00",
-        )
+            vlad_pred_2 = await mlmodel_service.make_prediction(
+                request="The cat jumped onto the windowsill",
+                chat_id=vlad_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2025-01-10T12:15:00",
+            )
 
-        vlad_pred_2 = mlmodel_service.make_prediction(
-            request="The cat jumped onto the windowsill",
-            chat_id=vlad_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2025-01-10T12:15:00",
-        )
+            vlad_pred_3 = await mlmodel_service.make_prediction(
+                request="They laughed at the joke for hours",
+                chat_id=vlad_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2025-02-01T16:50:00",
+            )
 
-        vlad_pred_3 = mlmodel_service.make_prediction(
-            request="They laughed at the joke for hours",
-            chat_id=vlad_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2025-02-01T16:50:00",
-        )
+            vlad_pred_4 = await mlmodel_service.make_prediction(
+                request="The rain started just as they left",
+                chat_id=vlad_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-12-18T07:00:00",
+            )
 
-        vlad_pred_4 = mlmodel_service.make_prediction(
-            request="The rain started just as they left",
-            chat_id=vlad_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-12-18T07:00:00",
-        )
+            mlmodel_service.username = lesha.email
+            lesha_pred_1 = await mlmodel_service.make_prediction(
+                request="He couldn't believe his eyes",
+                chat_id=lesha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2025-01-25T20:10:00",
+            )
 
-        lesha_pred_1 = mlmodel_service.make_prediction(
-            request="He couldn't believe his eyes",
-            chat_id=lesha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2025-01-25T20:10:00",
-        )
+            lesha_pred_2 = await mlmodel_service.make_prediction(
+                request="The stars were shining brightly",
+                chat_id=lesha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-11-30T22:05:00",
+            )
 
-        lesha_pred_2 = mlmodel_service.make_prediction(
-            request="The stars were shining brightly",
-            chat_id=lesha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-11-30T22:05:00",
-        )
+            lesha_pred_3 = await mlmodel_service.make_prediction(
+                request="She baked cookies for the party",
+                chat_id=lesha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2025-02-15T10:40:00",
+            )
 
-        lesha_pred_3 = mlmodel_service.make_prediction(
-            request="She baked cookies for the party",
-            chat_id=lesha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2025-02-15T10:40:00",
-        )
+            lesha_pred_4 = await mlmodel_service.make_prediction(
+                request="The train arrived right on time",
+                chat_id=lesha_chat_1.chat_id,
+                cost_id=cost.cost_id,
+                timestamp="2024-12-25T15:55:00",
+            )
 
-        lesha_pred_4 = mlmodel_service.make_prediction(
-            request="The train arrived right on time",
-            chat_id=lesha_chat_1.chat_id,
-            cost_id=cost.cost_id,
-            timestamp="2024-12-25T15:55:00",
-        )
-
-        prediction_service.create_one(misha_pred_1)
-        prediction_service.create_one(misha_pred_2)
-        prediction_service.create_one(misha_pred_3)
-        prediction_service.create_one(vlad_pred_1)
-        prediction_service.create_one(vlad_pred_2)
-        prediction_service.create_one(vlad_pred_3)
-        prediction_service.create_one(vlad_pred_4)
-        prediction_service.create_one(lesha_pred_1)
-        prediction_service.create_one(lesha_pred_2)
-        prediction_service.create_one(lesha_pred_3)
-        prediction_service.create_one(lesha_pred_4)
+            prediction_service.create_one(misha_pred_1)
+            prediction_service.create_one(misha_pred_2)
+            prediction_service.create_one(misha_pred_3)
+            prediction_service.create_one(vlad_pred_1)
+            prediction_service.create_one(vlad_pred_2)
+            prediction_service.create_one(vlad_pred_3)
+            prediction_service.create_one(vlad_pred_4)
+            prediction_service.create_one(lesha_pred_1)
+            prediction_service.create_one(lesha_pred_2)
+            prediction_service.create_one(lesha_pred_3)
+            prediction_service.create_one(lesha_pred_4)
 
 
 def show_db():

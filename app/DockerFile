@@ -1,42 +1,9 @@
-FROM nvidia/cuda:12.4.1-runtime-ubuntu22.04
+FROM python:3.12.9
 
-# Устанавливаем Python 3.12.9
-# https://medium.com/@prateek.mehra/installing-python-3-9-in-ubuntu-22-04-docker-image-194f9c9f9725
-RUN apt-get update && apt-get install -y \
-    software-properties-common \
-    curl \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update
+COPY requirements.txt /app/
 
-ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Europe/Moscow
-RUN apt-get install -y \
-    python3.12 \
-    python3.12-dev \
-    && apt-get clean
-    
-# Устанавливаем pip для Python 3.12
-RUN curl -sS https://bootstrap.pypa.io/get-pip.py | python3.12
-WORKDIR /app
+RUN pip install --upgrade pip && pip install -r /app/requirements.txt
 
-RUN pip3.12 install transformers==4.49.0 \
-torch==2.6.0 \
-torchaudio==2.6.0 \
-torchvision==0.21.0
+WORKDIR /app/
 
-COPY requirements.txt .
-
-RUN pip3.12 install -r requirements.txt
-
-CMD ["python3.12", "main.py"]
-
-
-# FROM python:3.12.9
-
-# COPY requirements.txt /app/
-
-# RUN pip install --upgrade pip && pip install -r /app/requirements.txt
-
-# WORKDIR /app/
-
-# CMD ["python", "main.py"]
+CMD ["python", "main.py"]

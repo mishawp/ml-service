@@ -2,6 +2,7 @@ from fastapi import APIRouter, Request, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Annotated
 from database.database import SessionDep
+from rabbitmq.rabbitmq import AsyncChannelDep
 from auth.authenticate import authenticate_cookie
 from models import Chat, Prediction
 from services.crud import (
@@ -50,19 +51,20 @@ async def open_chat(
     return predictions
 
 
-@route.post("/make_prediction")
+@route.post("/prediction")
 async def make_prediction(
     chat_id: int,
     model_input: str,
     session: SessionDep,
     username: Annotated[str, Depends(authenticate_cookie)],
+    channel: AsyncChannelDep,
 ):
     """Чего бы я хотел: Открыт чат. Пользователь вводит запрос. Производиться предикт и вставляется в html-ку. Не так, чтобы заново открывалась страница. Как это сделать - пока хз"""
     chat = get_user_chat(username, chat_id, session)
 
-    mlmodel_service = MLModelService(session)
+    mlmodel_service = MLModelService(session, channel, username)
     prediction_service = PredictionService(session)
-    prediction = mlmodel_service.make_prediction(
+    prediction = await mlmodel_service.make_prediction(
         request=model_input,
         chat_id=chat_id,
         cost_id=CostService.current_cost_id,

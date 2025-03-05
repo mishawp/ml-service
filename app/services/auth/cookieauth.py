@@ -4,9 +4,9 @@ from fastapi.security import OAuth2
 from fastapi.security.utils import get_authorization_scheme_param
 from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
-from database.config import get_settings
+from database.config import get_db_settings
 
-settings = get_settings()
+settings = get_db_settings()
 
 
 class OAuth2PasswordBearerWithCookie(OAuth2):

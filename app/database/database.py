@@ -2,24 +2,26 @@ from fastapi import Depends
 from sqlmodel import SQLModel, create_engine, Session, text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from typing import Annotated
-from .config import get_settings
+from .config import get_db_settings
+
+settings = get_db_settings()
 
 engine = create_engine(
-    url=get_settings().DATABASE_URL_psycopg,
+    url=settings.DATABASE_URL_psycopg,
     echo=False,
     pool_size=5,
     max_overflow=10,
 )
 
 async_engine = create_engine(
-    url=get_settings().DATABASE_URL_psycopg,
+    url=settings.DATABASE_URL_psycopg,
     echo=False,
     pool_size=5,
     max_overflow=10,
 )
 
 async_engine = create_async_engine(
-    url=get_settings().DATABASE_URL_asyncpg,
+    url=settings.DATABASE_URL_asyncpg,
     echo=False,
     pool_size=5,
     max_overflow=10,

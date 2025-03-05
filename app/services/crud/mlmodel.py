@@ -1,58 +1,22 @@
-import re
+import aio_pika
+import json
 from datetime import datetime
 from sqlmodel import Session
-from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from dataclasses import dataclass, field
-from typing import Any, ClassVar
+from aio_pika.abc import AbstractChannel
+from dataclasses import dataclass
+from typing import ClassVar
 from models import Prediction, User, Chat
-from services.crud import PredictionService
 
 
-@dataclass(frozen=True)
+@dataclass(slots=True)
 class MLModelService:
-    tokenizer: ClassVar[GPT2Tokenizer] = None
-    model: ClassVar[GPT2LMHeadModel] = None
-    model_id: ClassVar[str] = None
+    requests_queue_name: ClassVar[str] = "requests"
+    responses_queue_name: ClassVar[str] = "responses"
     session: Session
+    channel: AbstractChannel
+    username: str
 
-    @classmethod
-    def init_model(cls) -> Any:
-        if cls.model is not None:
-            return
-        cls.tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
-
-        cls.model = GPT2LMHeadModel.from_pretrained("gpt2").to("cuda")
-
-        cls.model_id = "gpt2"  # пока так
-
-    @classmethod
-    def predict(cls, request: str) -> str:
-        # Токенизация запроса
-        input_ids = cls.tokenizer.encode(request, return_tensors="pt").to(
-            "cuda"
-        )
-
-        attention_mask = (
-            input_ids.ne(cls.tokenizer.eos_token_id).long().to("cuda")
-        )
-        output = cls.model.generate(
-            input_ids,
-            attention_mask=attention_mask,
-            max_length=80,
-            num_return_sequences=1,
-            temperature=0.7,  # Контроль случайности
-            top_k=30,  # Ограничение выбора топ-k токенов
-            top_p=0.85,  # Ограничение выбора токенов по cumulative probability
-            do_sample=True,
-            pad_token_id=cls.tokenizer.eos_token_id,
-            repetition_penalty=1.5,  # Штраф за повторения
-        )
-
-        # Декодируем результат
-        response = cls.tokenizer.decode(output[0], skip_special_tokens=True)
-        return response
-
-    def make_prediction(
+    async def make_prediction(
         self,
         *,
         request: str,
@@ -60,32 +24,42 @@ class MLModelService:
         chat_id: int,
         cost_id: int,
     ) -> Prediction:
-        response = self.__validate(request)
         if self.__is_negative_balance(chat_id):
-            response += "Negative balance"
-        if not response:
-            response = self.predict(request)
+            response = "Negative balance"
+        else:
+            message = aio_pika.Message(
+                request.encode(),
+                correlation_id=self.username,
+                reply_to=self.responses_queue_name,
+            )
+            requests_queue = await self.channel.declare_queue(
+                name=self.requests_queue_name, durable=True
+            )
+            responses_queue = await self.channel.declare_queue(
+                name=self.responses_queue_name, durable=True
+            )
+            await self.channel.default_exchange.publish(
+                message, routing_key=self.requests_queue_name
+            )
+
+            async with responses_queue.iterator() as queue_iter:
+                async for response_message in queue_iter:
+                    async with response_message.process():
+                        if response_message.correlation_id == self.username:
+                            response = response_message.body.decode()
+                            response = json.loads(response)
+                            break
+
+        # await responses_queue.delete()
 
         return Prediction(
             timestamp=timestamp,
             request=request,
-            response=response,
+            response=response.get("response"),
             chat_id=chat_id,
             cost_id=cost_id,
-            model=self.model_id,
+            model=response.get("model_id"),
         )
-
-    @staticmethod
-    def __validate(request: str) -> str:
-        limit = 50
-        pattern = r'^[a-zA-Z0-9,?\'";:!\.\- ]+$'
-        if not re.match(pattern, request):
-            return (
-                "Use only Latin characters, numbers, and punctuation marks.\n"
-            )
-        if len(request) > limit:
-            return f"The text is too long ({len(request)} characters out of {limit})\n"
-        return ""
 
     def __is_negative_balance(self, chat_id: int) -> bool:
         chat = self.session.get(Chat, chat_id)

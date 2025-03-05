@@ -6,13 +6,13 @@ from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
 from services.auth.loginform import LoginForm
 from database.database import SessionDep
-from database.config import get_settings
+from database.config import get_db_settings
 from models import User
 from services.crud import UserService
 
 
 route = APIRouter(tags=["Home"])
-settings = get_settings()
+settings = get_db_settings()
 
 
 @route.get("/signin")
