@@ -12,14 +12,39 @@ tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
 model = GPT2LMHeadModel.from_pretrained("gpt2").to("cuda")
 
 
-def validate(request: str) -> str:
+def validate(model_input: str) -> str:
     limit = 50
     pattern = r'^[a-zA-Z0-9,?\'";:!\.\- ]+$'
-    if not re.match(pattern, request):
+    if not re.match(pattern, model_input):
         return "Use only Latin characters, numbers, and punctuation marks.\n"
-    if len(request) > limit:
-        return f"The text is too long ({len(request)} characters out of {limit})\n"
+    if len(model_input) > limit:
+        return f"The text is too long ({len(model_input)} characters out of {limit})\n"
     return ""
+
+
+def predict(model_input: str) -> str:
+    if (valid := validate(model_input)) != "":
+        return valid
+    # Токенизация запроса
+    input_ids = tokenizer.encode(model_input, return_tensors="pt").to("cuda")
+
+    attention_mask = input_ids.ne(tokenizer.eos_token_id).long().to("cuda")
+    output = model.generate(
+        input_ids,
+        attention_mask=attention_mask,
+        max_length=80,
+        num_return_sequences=1,
+        temperature=0.7,
+        top_k=30,
+        top_p=0.85,
+        do_sample=True,
+        pad_token_id=tokenizer.eos_token_id,
+        repetition_penalty=1.5,
+    )
+
+    # Декодируем результат
+    model_out = tokenizer.decode(output[0], skip_special_tokens=True)
+    return model_out
 
 
 async def process_message(
@@ -27,38 +52,17 @@ async def process_message(
     channel: aio_pika.abc.AbstractChannel,
 ):
     async with message.process():
-        request = message.body.decode()
-        response = validate(request)
-        if response != "":
-            return response
-        # Токенизация запроса
-        input_ids = tokenizer.encode(request, return_tensors="pt").to("cuda")
-
-        attention_mask = input_ids.ne(tokenizer.eos_token_id).long().to("cuda")
-        output = model.generate(
-            input_ids,
-            attention_mask=attention_mask,
-            max_length=80,
-            num_return_sequences=1,
-            temperature=0.7,  # Контроль случайности
-            top_k=30,  # Ограничение выбора топ-k токенов
-            top_p=0.85,  # Ограничение выбора токенов по cumulative probability
-            do_sample=True,
-            pad_token_id=tokenizer.eos_token_id,
-            repetition_penalty=1.5,  # Штраф за повторения
-        )
-
-        # Декодируем результат
-        response = tokenizer.decode(output[0], skip_special_tokens=True)
-        data = json.dumps(
+        model_input = message.body.decode()
+        model_out = predict(model_input)
+        response = json.dumps(
             {
                 "model_id": "gpt2",
-                "response": response,
+                "model_out": model_out,
             }
         )
         # Отправляем ответ в очередь ответов
         response_message = aio_pika.Message(
-            body=data.encode(), correlation_id=message.correlation_id
+            body=response.encode(), correlation_id=message.correlation_id
         )
         await channel.default_exchange.publish(
             response_message, routing_key="responses"
@@ -75,9 +79,21 @@ async def main() -> None:
     )
 
     channel = await conn.channel()
-    queue_name = "requests"
-    queue = await channel.declare_queue(queue_name, durable=True)
-    await queue.consume(lambda message: process_message(message, channel))
+    requests_queue = await channel.declare_queue(
+        "requests",
+        durable=True,
+        arguments={
+            "x-message-ttl": 60000,  # срок существования
+            "x-dead-letter-exchange": channel.default_exchange.name,
+            "x-dead-letter-routing-key": "responses",
+        },  # те же, что и в app
+    )
+    responses_queue = await channel.declare_queue("responses", durable=True)
+
+    await requests_queue.consume(
+        lambda message: process_message(message, channel)
+    )
+
     try:
         await asyncio.Future()
     finally:
