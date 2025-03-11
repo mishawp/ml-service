@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat {{ chat_id }}</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+        .top-menu {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            text-align: right;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .top-menu a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .top-menu a:hover {
+            color: #007bff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        #chat-messages {
+            height: 600px; /* Увеличенная высота окна чата */
+            overflow-y: auto;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        #chat-messages div {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+        #chat-messages strong {
+            color: #007bff;
+        }
+        hr {
+            border: 0;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 10px 0;
+        }
+        form {
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        input:focus {
+            border-color: #007bff;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Меню сверху -->
+    <div class="top-menu">
+        <a href="/user">Личный кабинет</a>
+        <a href="/chat">Чаты</a> <!-- Добавлена ссылка на /chat -->
+    </div>
+
+    <div class="container">
+        <h1>Chat {{ chat_id }}</h1>
+        <div id="chat-messages">
+            {% for prediction in predictions %}
+                <div>
+                    <strong>You:</strong> {{ prediction.request }}
+                </div>
+                <div>
+                    <strong>Bot:</strong> {{ prediction.response }}
+                </div>
+                <div>
+                    <strong>Cost:</strong> {{ prediction.cost }}
+                </div>
+                <hr>
+            {% endfor %}
+        </div>
+
+        <form id="chat-form">
+            <input type="text" id="message-input" placeholder="Type your message here..." required>
+            <button type="submit">Send</button>
+        </form>
+    </div>
+
+    <script>
+        // Извлечение chat_id из URL
+        const getChatIdFromUrl = () => {
+            const path = window.location.pathname; // Получаем текущий путь
+            const parts = path.split('/'); // Разделяем путь по "/"
+            return parts[parts.length - 1]; // Последний элемент — это chat_id
+        };
+        const chatId = getChatIdFromUrl();
+        const form = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const message = messageInput.value;
+
+            // Отправка сообщения на сервер
+            const response = await axios.post(`/chat/prediction`, {
+                chat_id: chatId,
+                model_input: message
+            });
+            if (response.data.status === 'processing') {
+                // Ожидание ответа от модели
+                const checkStatus = async () => {
+                    const statusResponse = await axios.get(`/chat/prediction/status?chat_id=${chatId}`);
+                    if (statusResponse.data.status === 'completed' || statusResponse.data.status === 'invalid') {
+                        // Добавление ответа в чат
+                        const newMessage = document.createElement('div');
+                        newMessage.innerHTML = `<strong>You:</strong> ${message}`;
+                        chatMessages.appendChild(newMessage);
+
+                        const botResponse = document.createElement('div');
+                        botResponse.innerHTML = `<strong>Bot:</strong> ${statusResponse.data.response}`;
+                        chatMessages.appendChild(botResponse);
+
+                        if (statusResponse.data.status === 'completed') {
+                            const costResponse = document.createElement('div');
+                            costResponse.innerHTML = `<strong>Cost:</strong> ${statusResponse.data.cost}`;
+                            chatMessages.appendChild(costResponse);
+                        }
+
+                        chatMessages.appendChild(document.createElement('hr'));
+                        chatMessages.scrollTop = chatMessages.scrollHeight; // Прокрутка вниз
+                    } else if (statusResponse.data.status === 'expired') {
+                        alert('Server is busy. Please try again later.');
+                    } else {
+                        setTimeout(checkStatus, 1000);
+                    }
+                };
+                checkStatus();
+            } else {
+                alert('The previous request has not been completed yet.');
+            }
+
+            messageInput.value = '';
+        });
+    </script>
+</body>
+</html>

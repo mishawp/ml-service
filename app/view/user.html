@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Профиль пользователя</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+        .top-menu {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            text-align: right;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .top-menu a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .top-menu a:hover {
+            color: #007bff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .profile-info p {
+            margin-bottom: 15px;
+            font-size: 1.1rem;
+            color: #e0e0e0;
+        }
+        .profile-info strong {
+            color: #007bff;
+        }
+        .actions {
+            margin-top: 30px;
+        }
+        .actions h2 {
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        .actions ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .actions ul li {
+            margin-bottom: 10px;
+        }
+        .actions ul li a {
+            display: block;
+            padding: 10px 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .actions ul li a:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+        .actions ul li a:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Меню сверху -->
+    <div class="top-menu">
+        <a href="/user">Личный кабинет</a>
+        <a href="/chat">Чаты</a>
+    </div>
+
+    <div class="container">
+        <h1>Профиль пользователя</h1>
+        <div class="profile-info">
+            <p><strong>Email:</strong> {{ user.email }}</p>
+            <p><strong>User ID:</strong> {{ user.user_id }}</p>
+            <p><strong>Баланс:</strong> {{ user.balance }}</p>
+        </div>
+
+        <div class="actions">
+            <h2>Действия:</h2>
+            <ul>
+                <li><a href="/user/payments">Платежи</a></li>
+                <li><a href="/user/logout">Выйти</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

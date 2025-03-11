@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chats</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+        .top-menu {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            text-align: right;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .top-menu a {
+            margin: 0 10px;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        .top-menu a:hover {
+            color: #007bff;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        ul li {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        ul li:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        ul li a {
+            text-decoration: none;
+            color: #fff;
+            font-size: 1rem;
+            display: block;
+            transition: color 0.3s ease;
+        }
+        ul li a:hover {
+            color: #007bff;
+        }
+        .new-chat-button {
+            text-align: center;
+            margin-top: 20px;
+        }
+        .new-chat-button a {
+            padding: 12px 30px;
+            background-color: #007bff;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        .new-chat-button a:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        .new-chat-button a:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Меню сверху -->
+    <div class="top-menu">
+        <a href="/user">Личный кабинет</a>
+        <a href="/chat">Чаты</a>
+    </div>
+
+    <div class="container">
+        <h1>Your Chats</h1>
+        <ul>
+            {% for chat in chats %}
+            <li><a href="/chat/{{ chat.chat_id }}">{{ chat.name }}</a></li>
+            {% endfor %}
+        </ul>
+
+        <!-- Кнопка создания нового чата -->
+        <div class="new-chat-button">
+            <a href="/chat/new_chat">New chat</a>
+        </div>
+    </div>
+</body>
+</html>

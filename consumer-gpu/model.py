@@ -23,8 +23,6 @@ def validate(model_input: str) -> str:
 
 
 def predict(model_input: str) -> str:
-    if (valid := validate(model_input)) != "":
-        return valid
     # Токенизация запроса
     input_ids = tokenizer.encode(model_input, return_tensors="pt").to("cuda")
 
@@ -53,11 +51,16 @@ async def process_message(
 ):
     async with message.process():
         model_input = message.body.decode()
-        model_out = predict(model_input)
+        if (model_out := validate(model_input)) == "":
+            model_out = predict(model_input)
+            status = "completed"
+        else:
+            status = "invalid"
         response = json.dumps(
             {
-                "model_id": "gpt2",
-                "model_out": model_out,
+                "status": status,
+                "response": model_out,
+                "model": "gpt2",
             }
         )
         # Отправляем ответ в очередь ответов

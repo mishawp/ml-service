@@ -5,7 +5,7 @@ from sqlmodel import Session
 from aio_pika.abc import AbstractChannel
 from dataclasses import dataclass
 from typing import ClassVar
-from models import User, Chat
+from models import User, Chat, Prediction
 
 
 @dataclass(slots=True)
@@ -43,7 +43,11 @@ class MLModelService:
         self.shared_requests_queue[correlation_id] = model_input
         if self.__is_negative_balance(chat_id):
             response = json.dump(
-                {"model_out": "Negative balance", "model_id": "###"}
+                {
+                    "status": "negative balance",
+                    "response": "Negative balance",
+                    "model": "###",
+                }
             )
             message = aio_pika.Message(
                 response.encode(),
@@ -64,6 +68,14 @@ class MLModelService:
             )
 
     async def receive_ml_task(self, *, chat_id) -> dict[str, str]:
+        """
+
+        Args:
+            chat_id (_type_): _description_
+
+        Returns:
+            dict[str, str]: status: {completed, invalid, expired, processing}
+        """
         correlation_id = self.username + str(chat_id)
         responses_queue = await self.channel.declare_queue(
             name=self.responses_queue_name, durable=True
@@ -86,13 +98,12 @@ class MLModelService:
                 if entry.get("reason") == "expired":
                     response_data = {
                         "status": "expired",
-                        "model_out": "The server is busy",
-                        "model_id": "###",
+                        "response": "The server is busy",
+                        "model": "###",
                     }
         else:
             response_body = message.body.decode()
             response_data = json.loads(response_body)
-            response_data["status"] = "completed"
 
         self.shared_requests_queue.pop(correlation_id)
         return response_data
@@ -114,13 +125,17 @@ class MLModelService:
         response_body = response_message.body.decode()
         response_data = json.loads(response_body)
         response_data["chat_id"] = re.search(r"\d+$", correlation_id).group(0)
+        response_data["status"] = "completed"
         response_data["model_input"] = self.shared_requests_queue.pop(
             correlation_id
         )
-        response_data["status"] = "completed"
         return response_data
 
     def __is_negative_balance(self, chat_id: int) -> bool:
         chat = self.session.get(Chat, chat_id)
         user = self.session.get(User, chat.user_id)
         return user.balance < 0
+
+    @classmethod
+    def get_request(cls, correlation_id: str) -> str | None:
+        return cls.shared_requests_queue.get(correlation_id, None)

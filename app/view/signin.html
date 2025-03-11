@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(135deg, #6a11cb, #2575fc);
+            color: #fff;
+        }
+        .container {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        h1 {
+            margin-bottom: 20px;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 1rem;
+            color: #e0e0e0;
+            text-align: left;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1rem;
+            outline: none;
+        }
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        input:focus {
+            border-color: #007bff;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+            transform: translateY(-2px);
+        }
+        button:active {
+            transform: translateY(0);
+        }
+        p {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #e0e0e0;
+        }
+        a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        a:hover {
+            color: #0056b3;
+        }
+        .error {
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+    </style>
+    <script>
+        // Функция для отправки формы на указанный URL
+        function submitFormTo(url) {
+            const form = document.getElementById('login-form'); // Находим форму
+            form.action = url; // Меняем действие формы на /signup
+            form.submit(); // Отправляем форму
+        }
+
+        // Перехват клика по ссылке
+        document.addEventListener('DOMContentLoaded', function () {
+            const signupLink = document.getElementById('signup-link');
+            signupLink.addEventListener('click', function (event) {
+                event.preventDefault(); // Отменяем стандартное поведение ссылки
+                submitFormTo('/signup'); // Отправляем форму на /signup
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Sign Up</h1>
+        {% if error %}
+        <p class="error">{{ error }}</p>
+        {% endif %}
+        <form id="login-form" action="/login" method="post">
+            <label for="username">Email:</label>
+            <input type="email" id="username" name="username" placeholder="Enter your email" required>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" placeholder="Enter your password" required>
+            <button type="submit">Log in</button>
+        </form>
+        <p>Already have an account? <a href="/signup" id="signup-link">Sign up</a></p>
+    </div>
+</body>
+</html>

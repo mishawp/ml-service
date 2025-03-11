@@ -1,6 +1,7 @@
 import uvicorn
-from fastapi import FastAPI, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi import FastAPI, Request, HTTPException, status
+from fastapi.templating import Jinja2Templates
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
 from routes.home import route as home_route
 from routes.chat import route as chat_route
@@ -10,12 +11,11 @@ from database.database import init_db
 from rabbitmq.rabbitmq import (
     connect_rabbitmq,
     close_rabbitmq_connection,
-    get_connection,
 )
-from services.crud import MLModelService
 from auth.authenticate import authenticate_cookie
-from utils.fill_db import fill_db
+from utils.fill_db import fill_db, show_db
 
+templates = Jinja2Templates(directory="view")
 settings = get_db_settings()
 app = FastAPI()
 app.include_router(home_route)
@@ -35,6 +35,25 @@ app.add_middleware(
 )
 
 
+# Middleware для обработки исключений
+@app.middleware("http")
+async def catch_exceptions(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except HTTPException as e:
+        if e.status_code in [
+            status.HTTP_401_UNAUTHORIZED,
+            status.HTTP_403_FORBIDDEN,
+            status.HTTP_404_NOT_FOUND,
+        ]:
+            error_message = e.detail
+            return RedirectResponse(
+                url=f"/signin?error={error_message}",
+                status_code=status.HTTP_303_SEE_OTHER,
+            )
+        raise
+
+
 @app.on_event("startup")
 async def on_startup():
     init_db()
@@ -48,14 +67,8 @@ async def shutdown_event():
 
 
 @app.get("/", summary="Вход в систему", tags=["Home"])
-async def start(request: Request) -> RedirectResponse:
-    token = request.cookies.get(settings.COOKIE_NAME)
-    user = await authenticate_cookie(token) if token else None
-    # context = {"user": user, "request": request}
-    if user:
-        return RedirectResponse("/chat", status.HTTP_302_FOUND)
-    else:
-        return RedirectResponse("/signin", status.HTTP_302_FOUND)
+async def start(request: Request) -> HTMLResponse:
+    return templates.TemplateResponse("index.html", {"request": request})
 
 
 if __name__ == "__main__":

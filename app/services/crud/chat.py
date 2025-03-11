@@ -25,7 +25,7 @@ class ChatService:
     def read_user_chat(self, chat_id: int, user_id: int) -> Chat:
         return self.session.exec(
             select(Chat).where(
-                Chat.chat_id == chat_id and Chat.user_id == user_id
+                (Chat.chat_id == chat_id) & (Chat.user_id == user_id)
             )
         ).first()
 

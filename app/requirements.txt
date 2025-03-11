@@ -8,6 +8,7 @@ pydantic-settings
 pydantic[email]
 sqlmodel
 starlette
+Jinja2==3.1.5
 fastapi==0.115.8
 python-multipart==0.0.20
 uvicorn==0.34.0

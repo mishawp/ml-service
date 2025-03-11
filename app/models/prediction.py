@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from datetime import datetime
 
 
@@ -9,4 +9,4 @@ class Prediction(SQLModel, table=True):
     cost_id: int = Field(foreign_key="cost.cost_id", ondelete="RESTRICT")
     chat_id: int = Field(foreign_key="chat", ondelete="CASCADE")
     response: str = Field(default=None)
-    model: str = Field(default=None)  # не ясно пока
+    model: str = Field(default=None)

@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from dataclasses import dataclass
+from decimal import Decimal
 from typing import ClassVar
 from models.cost import Cost
 
@@ -7,6 +8,7 @@ from models.cost import Cost
 @dataclass(slots=True)
 class CostService:
     current_cost_id: ClassVar[int] = 1
+    current_cost: ClassVar[Decimal] = None
     session: Session
 
     def create_one(self, cost: Cost) -> Cost:
@@ -65,3 +67,8 @@ class CostService:
             self.current_cost_id = cur_cost.cost_id
         else:
             raise ValueError("No Cost records found in the database.")
+
+    def set_current_cost(self) -> Decimal:
+        CostService.current_cost = self.read_by_id(
+            CostService.current_cost_id
+        ).prediction_cost

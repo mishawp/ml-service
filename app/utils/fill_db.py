@@ -29,7 +29,6 @@ async def predict(
         chat_id=chat.chat_id,
     )
     while True:
-        await asyncio.sleep(0.5)
         mlmodel_out = await mlmodel_service.receive_any_ml_task()
         if mlmodel_out["status"] == "no_tasks":
             continue
@@ -37,10 +36,10 @@ async def predict(
             prediction_service.create_one(
                 Prediction(
                     request=mlmodel_out["model_input"],
-                    response=mlmodel_out["model_out"],
+                    response=mlmodel_out["response"],
                     chat_id=mlmodel_out["chat_id"],
                     cost_id=CostService.current_cost_id,
-                    model=mlmodel_out["model_id"],
+                    model=mlmodel_out["model"],
                 )
             )
             break
@@ -146,6 +145,7 @@ async def fill_db():
 
         cost_service = CostService(session)
         cost_service.create_one(cost)
+        cost_service.set_current_cost()
         async with get_connection().channel() as channel:
             mlmodel_service = MLModelService(channel, "...", session)
             print(MLModelService.shared_requests_queue)

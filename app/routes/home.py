@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Request, status, HTTPException, Depends, Form
-from fastapi.responses import Response, RedirectResponse
+from fastapi.responses import Response, RedirectResponse, HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from auth.hash_password import HashPassword
 from auth.jwt_handler import create_access_token
@@ -10,14 +11,16 @@ from database.config import get_db_settings
 from models import User
 from services.crud import UserService
 
-
+templates = Jinja2Templates(directory="view")
 route = APIRouter(tags=["Home"])
 settings = get_db_settings()
 
 
 @route.get("/signin")
-async def signin(request: Request):
-    pass  # html return
+async def signin(request: Request, error: str | None = None):
+    return templates.TemplateResponse(
+        "signin.html", {"request": request, "error": error}
+    )
 
 
 @route.post("/token")
@@ -30,7 +33,7 @@ async def login_for_access_token(
     user = user_service.read_by_email(form_data.username)
     if user is None:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="User does not exist"
+            status_code=status.HTTP_403_FORBIDDEN, detail="User does not exist"
         )
 
     if HashPassword.verify_hash(form_data.password, user.password):
@@ -42,31 +45,47 @@ async def login_for_access_token(
         )
 
         return {settings.COOKIE_NAME: access_token, "token_type": "bearer"}
-
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Invalid details passed.",
+        detail="Invalid details passed",
     )
 
 
 @route.post("/login")
-async def login(form_data: Annotated[LoginForm, Form()], session: SessionDep):
-    response = RedirectResponse("/", status.HTTP_302_FOUND)
-    await login_for_access_token(
-        response=response, form_data=form_data, session=session
-    )
+async def login(
+    request: Request,
+    form_data: Annotated[LoginForm, Form()],
+    session: SessionDep,
+):
+    response = RedirectResponse("/chat", status.HTTP_302_FOUND)
+    try:
+        await login_for_access_token(
+            response=response, form_data=form_data, session=session
+        )
+    except HTTPException as e:
+        return templates.TemplateResponse(
+            "signin.html",
+            {"request": request, "error": e.detail},
+            status_code=e.status_code,
+        )
     return response
 
 
 @route.post("/signup")
-async def signup(form_data: Annotated[LoginForm, Form()], session: SessionDep):
+async def signup(
+    request: Request,
+    form_data: Annotated[LoginForm, Form()],
+    session: SessionDep,
+):
     user_service = UserService(session)
     user = user_service.read_by_email(form_data.username)
     if user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The user already exists",
+        return templates.TemplateResponse(
+            "signin.html",
+            {"request": request, "error": "The user already exists"},
+            status_code=status.HTTP_403_FORBIDDEN,
         )
+
     new_user = User(
         email=form_data.username,
         password=HashPassword.create_hash(form_data.password),
