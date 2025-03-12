@@ -1,5 +1,5 @@
 from __future__ import annotations
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 from decimal import Decimal
 
 

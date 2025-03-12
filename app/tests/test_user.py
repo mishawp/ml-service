@@ -1,11 +1,8 @@
 import pytest
-from decimal import Decimal
 from fastapi import status
 from httpx import AsyncClient
 from sqlmodel import Session
-from models import Payment
 from services.crud import PaymentService, UserService
-from auth.hash_password import HashPassword
 
 
 @pytest.mark.asyncio

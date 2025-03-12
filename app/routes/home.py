@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Request, status, HTTPException, Depends, Form
-from fastapi.responses import Response, RedirectResponse, HTMLResponse
+from fastapi.responses import Response, RedirectResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.templating import Jinja2Templates
 from typing import Annotated

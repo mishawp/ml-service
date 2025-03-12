@@ -12,8 +12,7 @@ from rabbitmq.rabbitmq import (
     connect_rabbitmq,
     close_rabbitmq_connection,
 )
-from auth.authenticate import authenticate_cookie
-from utils.fill_db import fill_db, show_db
+from utils.fill_db import fill_db
 
 templates = Jinja2Templates(directory="view")
 settings = get_db_settings()

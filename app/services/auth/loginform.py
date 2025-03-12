@@ -1,4 +1,3 @@
-from fastapi import Request
 from pydantic import BaseModel, EmailStr, Field
 from typing import Annotated
 

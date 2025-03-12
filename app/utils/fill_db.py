@@ -1,8 +1,7 @@
-import asyncio
 from sqlmodel import Session
 from decimal import Decimal
 from datetime import datetime
-from models import Chat, Cost, Payment, User, Admin, Prediction
+from models import Chat, Cost, Payment, User, Admin
 from services.crud import (
     ChatService,
     CostService,

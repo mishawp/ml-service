@@ -1,6 +1,5 @@
 import aio_pika
 import json
-import re
 from sqlmodel import Session
 from aio_pika.abc import AbstractChannel
 from dataclasses import dataclass

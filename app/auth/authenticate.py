@@ -1,4 +1,4 @@
-from fastapi import Depends, HTTPException, status, Request
+from fastapi import Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from auth.jwt_handler import verify_access_token
 from services.auth.cookieauth import OAuth2PasswordBearerWithCookie

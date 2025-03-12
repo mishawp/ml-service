@@ -1,6 +1,6 @@
 from sqlmodel import Session, select
 from dataclasses import dataclass
-from models import User, Admin, Payment
+from models import User, Admin
 from services.crud import PaymentService
 
 

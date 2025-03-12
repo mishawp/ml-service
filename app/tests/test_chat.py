@@ -1,11 +1,8 @@
 import pytest
-from aio_pika.abc import AbstractChannel
 from fastapi import status
 from httpx import AsyncClient
 from sqlmodel import Session
-from models import Chat, Prediction
-from services.crud import ChatService, PredictionService
-from auth.hash_password import HashPassword
+from services.crud import ChatService
 
 
 @pytest.mark.asyncio

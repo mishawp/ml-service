@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Request, Depends, Body
 from fastapi.templating import Jinja2Templates
-from typing import Annotated, Any
+from typing import Annotated
 from decimal import Decimal
 from database.database import SessionDep
 from auth.authenticate import authenticate_cookie
