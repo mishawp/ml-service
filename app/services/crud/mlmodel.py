@@ -42,7 +42,7 @@ class MLModelService:
         correlation_id = self.username + str(chat_id)
         self.shared_requests_queue[correlation_id] = model_input
         if self.__is_negative_balance(chat_id):
-            response = json.dump(
+            response = json.dumps(
                 {
                     "status": "negative balance",
                     "response": "Negative balance",

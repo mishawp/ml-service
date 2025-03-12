@@ -216,6 +216,9 @@ async def fill_db():
                 lesha_chat_1,
                 "The train arrived right on time",
             )
+            lesha.balance = -1
+            session.commit()
+            session.refresh(lesha)
 
 
 def show_db():

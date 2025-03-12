@@ -3,7 +3,7 @@ from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from typing import Annotated
 from database.database import SessionDep
-from rabbitmq.rabbitmq import AsyncChannelDep, get_connection
+from rabbitmq.rabbitmq import AsyncChannelDep
 from auth.authenticate import authenticate_cookie
 from models import Chat, Prediction
 from services.crud import (
