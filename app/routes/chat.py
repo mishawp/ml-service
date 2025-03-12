@@ -59,7 +59,9 @@ async def create_chat(
     new_chat = Chat(user_id=user.user_id)
     chat_service.create_one(new_chat)
     # Сидит рядом с мамой
-    response = RedirectResponse(f"/chat/{new_chat.chat_id}")
+    response = RedirectResponse(
+        f"/chat/{new_chat.chat_id}", status.HTTP_302_FOUND
+    )
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Pragma"] = "no-cache"
     response.headers["Expires"] = "0"
@@ -94,8 +96,8 @@ async def open_chat(
 async def make_prediction(
     chat_id: Annotated[int, Body()],
     model_input: Annotated[str, Body()],
-    session: SessionDep,
     username: Annotated[str, Depends(authenticate_cookie)],
+    session: SessionDep,
     channel: AsyncChannelDep,
 ) -> dict:
     # нельзя отправлять ml-задачу, пока предыдущая задача не была получена

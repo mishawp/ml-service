@@ -91,7 +91,7 @@ async def signup(
         password=HashPassword.create_hash(form_data.password),
     )
     user_service.create_one(new_user)
-    response = await login(form_data, session)
+    response = await login(request, form_data, session)
     return response
 
 
