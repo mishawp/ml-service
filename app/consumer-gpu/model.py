@@ -2,9 +2,12 @@ import asyncio
 import aio_pika
 import re
 import json
-import transformers
+from sqlmodel import create_engine, Session
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
-from config import get_rabbitmq_settings
+from database.config import get_db_settings
+from rabbitmq.config import get_rabbitmq_settings
+from models import Prediction
+from services.crud import PredictionService
 
 
 tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
@@ -48,19 +51,37 @@ def predict(model_input: str) -> str:
 async def process_message(
     message: aio_pika.abc.AbstractIncomingMessage,
     channel: aio_pika.abc.AbstractChannel,
+    engine,
 ):
     async with message.process():
-        model_input = message.body.decode()
-        if (model_out := validate(model_input)) == "":
-            model_out = predict(model_input)
+        # получаем сообщение
+        request = json.loads(message.body.decode())
+        # валидируем
+        # если валидно, заносим ответ модели в бд
+        if (model_out := validate(request["request"])) == "":
+            model_out = predict(request["request"])
+            with Session(engine) as session:
+                prediction = Prediction(
+                    request=request["request"],
+                    response=model_out,
+                    chat_id=request["chat_id"],
+                    cost_id=request["cost_id"],
+                    model="gpt2",
+                )
+                PredictionService(session).create_one(prediction)
+                model_out = prediction.prediction_id
             status = "completed"
         else:
             status = "invalid"
+
+        # status может быть invalid
         response = json.dumps(
             {
+                # invalid or completed
                 "status": status,
+                # prediction_id if completed
+                # validation description if invalid
                 "response": model_out,
-                "model": "gpt2",
             }
         )
         # Отправляем ответ в очередь ответов
@@ -93,8 +114,10 @@ async def main() -> None:
     )
     responses_queue = await channel.declare_queue("responses", durable=True)
 
+    engine = create_engine(get_db_settings().DATABASE_URL_psycopg)
+
     await requests_queue.consume(
-        lambda message: process_message(message, channel)
+        lambda message: process_message(message, channel, engine)
     )
 
     try:

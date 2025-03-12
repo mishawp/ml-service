@@ -18,9 +18,7 @@ settings = get_db_settings()
 
 @route.get("/signin")
 async def signin(request: Request, error: str | None = None):
-    return templates.TemplateResponse(
-        "signin.html", {"request": request, "error": error}
-    )
+    return templates.TemplateResponse(request, "signin.html", {"error": error})
 
 
 @route.post("/token")
@@ -64,8 +62,9 @@ async def login(
         )
     except HTTPException as e:
         return templates.TemplateResponse(
+            request,
             "signin.html",
-            {"request": request, "error": e.detail},
+            {"error": e.detail},
             status_code=e.status_code,
         )
     return response
@@ -81,8 +80,9 @@ async def signup(
     user = user_service.read_by_email(form_data.username)
     if user:
         return templates.TemplateResponse(
+            request,
             "signin.html",
-            {"request": request, "error": "The user already exists"},
+            {"error": "The user already exists"},
             status_code=status.HTTP_403_FORBIDDEN,
         )
 

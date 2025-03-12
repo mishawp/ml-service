@@ -52,17 +52,20 @@ services:
 
   consumer:
     build:
-      context: consumer-gpu
+      context: app/consumer-gpu
       dockerfile: DockerFile
     scale: 2
     runtime: nvidia
     volumes:
-      - ./consumer-gpu:/app
+      - ./app/database:/app/database
+      - ./app/rabbitmq:/app/rabbitmq
+      - ./app/models:/app/models
+      - ./app/services:/app/services
     depends_on:
       - rabbitmq
       - database
     env_file:
-      - ./consumer-gpu/.env
+      - ./app/.env
 
 volumes:
   rabbitmq_data:

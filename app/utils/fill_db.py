@@ -20,7 +20,6 @@ from auth.hash_password import HashPassword
 # подстраиваемся под код рабочего приложения
 async def predict(
     mlmodel_service: MLModelService,
-    prediction_service: PredictionService,
     chat: Chat,
     model_input: str,
 ) -> None:
@@ -28,21 +27,9 @@ async def predict(
         model_input=model_input,
         chat_id=chat.chat_id,
     )
-    while True:
-        mlmodel_out = await mlmodel_service.receive_any_ml_task()
-        if mlmodel_out["status"] == "no_tasks":
-            continue
-        else:
-            prediction_service.create_one(
-                Prediction(
-                    request=mlmodel_out["model_input"],
-                    response=mlmodel_out["response"],
-                    chat_id=mlmodel_out["chat_id"],
-                    cost_id=CostService.current_cost_id,
-                    model=mlmodel_out["model"],
-                )
-            )
-            break
+    received = False
+    while not received:
+        received = await mlmodel_service.wait_ml_task()
 
 
 async def fill_db():
@@ -155,7 +142,6 @@ async def fill_db():
             mlmodel_service.username = misha.email
             await predict(
                 mlmodel_service,
-                prediction_service,
                 misha_chat_1,
                 "When she was walking in the park",
             )
@@ -163,7 +149,6 @@ async def fill_db():
             # 2
             await predict(
                 mlmodel_service,
-                prediction_service,
                 misha_chat_1,
                 "He decided to take a different route home",
             )
@@ -171,7 +156,6 @@ async def fill_db():
             # 3
             await predict(
                 mlmodel_service,
-                prediction_service,
                 misha_chat_2,
                 "The sun was setting behind the mountains",
             )
@@ -180,7 +164,6 @@ async def fill_db():
             # 4
             await predict(
                 mlmodel_service,
-                prediction_service,
                 vlad_chat_1,
                 "She found an old book in the attic",
             )
@@ -188,7 +171,6 @@ async def fill_db():
             # 5
             await predict(
                 mlmodel_service,
-                prediction_service,
                 vlad_chat_1,
                 "The cat jumped onto the windowsill",
             )
@@ -196,7 +178,6 @@ async def fill_db():
             # 6
             await predict(
                 mlmodel_service,
-                prediction_service,
                 vlad_chat_1,
                 "They laughed at the joke for hours",
             )
@@ -204,7 +185,6 @@ async def fill_db():
             # 7
             await predict(
                 mlmodel_service,
-                prediction_service,
                 vlad_chat_1,
                 "The rain started just as they left",
             )
@@ -213,7 +193,6 @@ async def fill_db():
             # 8
             await predict(
                 mlmodel_service,
-                prediction_service,
                 lesha_chat_1,
                 "He couldn't believe his eyes",
             )
@@ -221,7 +200,6 @@ async def fill_db():
             # 9
             await predict(
                 mlmodel_service,
-                prediction_service,
                 lesha_chat_1,
                 "The stars were shining brightly",
             )
@@ -229,7 +207,6 @@ async def fill_db():
             # 10
             await predict(
                 mlmodel_service,
-                prediction_service,
                 lesha_chat_1,
                 "She baked cookies for the party",
             )
@@ -237,7 +214,6 @@ async def fill_db():
             # 11
             await predict(
                 mlmodel_service,
-                prediction_service,
                 lesha_chat_1,
                 "The train arrived right on time",
             )

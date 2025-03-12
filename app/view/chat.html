@@ -184,6 +184,8 @@
                         chatMessages.scrollTop = chatMessages.scrollHeight; // Прокрутка вниз
                     } else if (statusResponse.data.status === 'expired') {
                         alert('Server is busy. Please try again later.');
+                    } else if (statusResponse.data.status === 'negative balance') {
+                        alert('Negative balance');
                     } else {
                         setTimeout(checkStatus, 1000);
                     }

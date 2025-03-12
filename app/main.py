@@ -68,7 +68,7 @@ async def shutdown_event():
 
 @app.get("/", summary="Вход в систему", tags=["Home"])
 async def start(request: Request) -> HTMLResponse:
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(request, "index.html")
 
 
 if __name__ == "__main__":

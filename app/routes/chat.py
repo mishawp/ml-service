@@ -44,8 +44,7 @@ async def chats(
     chat_service = ChatService(session)
     user = user_service.read_by_email(username)
     chats = chat_service.read_by_user_id(user.user_id)
-    context = {"request": request, "chats": chats}
-    return templates.TemplateResponse("chats.html", context)
+    return templates.TemplateResponse(request, "chats.html", {"chats": chats})
 
 
 @route.get("/new_chat")
@@ -83,9 +82,9 @@ async def open_chat(
         pred["cost"] = cost_service.read_by_id(pred["cost_id"]).prediction_cost
 
     return templates.TemplateResponse(
+        request,
         "chat.html",
         {
-            "request": request,
             "predictions": predictions,
         },
     )
@@ -136,14 +135,9 @@ async def wait_predict(
             # как только модель дала ответ, чтобы этот сервис не перегружался,
             # тут же ожидать статуса выполнения.
             # Но это много переписывать, поэтому пускай на этот раз будет так
-            prediction = Prediction(
-                request=mlmodel_input,
-                response=mlmodel_response["response"],
-                chat_id=chat_id,
-                cost_id=CostService.current_cost_id,
-                model=mlmodel_response["model"],
+            prediction = prediction_service.read_by_id(
+                mlmodel_response["response"]
             )
-            prediction_service.create_one(prediction)
             # внутри MLModelService не создается Prediction
             # там хранится словарь с status, model_out, model_id
             # после появления записи в бд
@@ -162,25 +156,35 @@ async def check_prediction_status(
     session: SessionDep,
     channel: AsyncChannelDep,
 ):
-    prediction_response = await wait_predict(
-        username,
-        chat_id,
-        MLModelService(channel, username),
-        PredictionService(session),
-    )
-    if prediction_response:
-        if prediction_response["status"] == "completed":
+    correlation_id = get_correlation_id(username, chat_id)
+    mlmodel_service = MLModelService(channel, username)
+    if mlmodel_input := MLModelService.get_request(correlation_id):
+        mlmodel_response = await mlmodel_service.receive_ml_task(
+            chat_id=chat_id
+        )
+        if mlmodel_response["status"] == "completed":
+            prediction_service = PredictionService(session)
+            cost_service = CostService(session)
+            prediction = prediction_service.read_by_id(
+                mlmodel_response["response"]
+            )
+            cost = cost_service.read_by_id(prediction.cost_id)
             return {
                 "status": "completed",
-                "response": prediction_response["response"],
-                "cost": CostService.current_cost,
+                "response": prediction.response,
+                "cost": cost.prediction_cost,
             }
-        elif prediction_response["status"] == "invalid":
+        elif mlmodel_response["status"] == "invalid":
             return {
                 "status": "invalid",
-                "response": prediction_response["response"],
+                "response": mlmodel_response["response"],
             }
-        elif prediction_response["status"] == "expired":
-            return {"status": "expired", "response": "server is busy"}
+        elif mlmodel_response["status"] == "expired":
+            return {"status": "expired", "response": "Server is busy"}
+        elif mlmodel_response["status"] == "negative balance":
+            return {
+                "status": "negative balance",
+                "response": "Negative balance",
+            }
     else:
         return {"status": "processing", "response": "processing"}

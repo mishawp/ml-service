@@ -24,4 +24,6 @@ COPY requirements.txt .
 
 RUN pip3.12 install -r requirements.txt
 
+COPY model.py /app/
+
 CMD ["python3.12", "model.py"]

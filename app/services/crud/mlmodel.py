@@ -6,6 +6,7 @@ from aio_pika.abc import AbstractChannel
 from dataclasses import dataclass
 from typing import ClassVar
 from models import User, Chat, Prediction
+from services.crud import CostService
 
 
 @dataclass(slots=True)
@@ -46,7 +47,6 @@ class MLModelService:
                 {
                     "status": "negative balance",
                     "response": "Negative balance",
-                    "model": "###",
                 }
             )
             message = aio_pika.Message(
@@ -58,8 +58,15 @@ class MLModelService:
                 message, routing_key=self.responses_queue_name
             )
         else:
+            request = json.dumps(
+                {
+                    "request": model_input,
+                    "chat_id": chat_id,
+                    "cost_id": CostService.current_cost_id,
+                }
+            )
             message = aio_pika.Message(
-                model_input.encode(),
+                request.encode(),
                 correlation_id=correlation_id,
                 reply_to=self.responses_queue_name,
             )
@@ -68,14 +75,6 @@ class MLModelService:
             )
 
     async def receive_ml_task(self, *, chat_id) -> dict[str, str]:
-        """
-
-        Args:
-            chat_id (_type_): _description_
-
-        Returns:
-            dict[str, str]: status: {completed, invalid, expired, processing}
-        """
         correlation_id = self.username + str(chat_id)
         responses_queue = await self.channel.declare_queue(
             name=self.responses_queue_name, durable=True
@@ -87,6 +86,7 @@ class MLModelService:
                     response_message = message
                     await message.ack()
                     break
+
         # еще необработан моделью
         if response_message is None:
             return {"status": "processing"}
@@ -99,7 +99,6 @@ class MLModelService:
                     response_data = {
                         "status": "expired",
                         "response": "The server is busy",
-                        "model": "###",
                     }
         else:
             response_body = message.body.decode()
@@ -109,27 +108,20 @@ class MLModelService:
         return response_data
 
     # just for utils/fill_db.py
-    async def receive_any_ml_task(self) -> dict[str, str]:
+    async def wait_ml_task(self) -> dict[str, str]:
         responses_queue = await self.channel.declare_queue(
             name=self.responses_queue_name, durable=True
         )
-
         # Получаем первое доступное сообщение из очереди
         try:
             response_message = await responses_queue.get()
             await response_message.ack()
         except Exception as e:
             # Если очередь пуста или произошла ошибка
-            return {"status": "no_tasks", "error": str(e)}
+            return False
         correlation_id = response_message.correlation_id
-        response_body = response_message.body.decode()
-        response_data = json.loads(response_body)
-        response_data["chat_id"] = re.search(r"\d+$", correlation_id).group(0)
-        response_data["status"] = "completed"
-        response_data["model_input"] = self.shared_requests_queue.pop(
-            correlation_id
-        )
-        return response_data
+        self.shared_requests_queue.pop(correlation_id)
+        return True
 
     def __is_negative_balance(self, chat_id: int) -> bool:
         chat = self.session.get(Chat, chat_id)

@@ -20,9 +20,7 @@ async def user(
 ):
     user_service = UserService(session)
     user = user_service.read_by_email(username)
-    return templates.TemplateResponse(
-        "user.html", {"request": request, "user": user}
-    )
+    return templates.TemplateResponse(request, "user.html", {"user": user})
 
 
 @route.post("/pay")
@@ -55,5 +53,5 @@ async def show_payments(
     payments.sort(key=lambda x: x.timestamp, reverse=True)
 
     return templates.TemplateResponse(
-        "payments.html", {"request": request, "payments": payments}
+        request, "payments.html", {"payments": payments}
     )
