@@ -5,7 +5,12 @@ from decimal import Decimal
 from database.database import SessionDep
 from auth.authenticate import authenticate_cookie
 from models import Payment
-from services.crud import PaymentService, UserService
+from services.crud import (
+    PaymentService,
+    UserService,
+    PredictionService,
+    CostService,
+)
 
 
 templates = Jinja2Templates(directory="view")
@@ -48,10 +53,32 @@ async def show_payments(
 ):
     user_service = UserService(session)
     payment_service = PaymentService(session)
+    prediction_service = PredictionService(session)
+    cost_service = CostService(session)
     user = user_service.read_by_email(username)
     payments = payment_service.read_by_user_id(user.user_id)
-    payments.sort(key=lambda x: x.timestamp, reverse=True)
+    predictions = prediction_service.read_by_user_id(user.user_id)
+    transactions = [
+        {
+            "timestamp": prediction.timestamp,
+            "amount": -cost_service.read_by_id(
+                prediction.cost_id
+            ).prediction_cost,
+            "operation": "Списание",
+            "status": "Выполнено",
+        }
+        for prediction in predictions
+    ] + [
+        {
+            "timestamp": payment.timestamp,
+            "amount": payment.amount,
+            "operation": "Зачисление",
+            "status": "Выполнено" if payment.status else "Отклонено",
+        }
+        for payment in payments
+    ]
+    transactions.sort(key=lambda x: x["timestamp"], reverse=True)
 
     return templates.TemplateResponse(
-        request, "payments.html", {"payments": payments}
+        request, "payments.html", {"transactions": transactions}
     )

@@ -2,6 +2,7 @@ import asyncio
 import aio_pika
 import re
 import json
+from datetime import datetime
 from sqlmodel import create_engine, Session
 from transformers import GPT2LMHeadModel, GPT2Tokenizer
 from database.config import get_db_settings
@@ -64,6 +65,7 @@ async def process_message(
                 prediction = Prediction(
                     request=request["request"],
                     response=model_out,
+                    timestamp=datetime.now(),
                     chat_id=request["chat_id"],
                     cost_id=request["cost_id"],
                     model="gpt2",

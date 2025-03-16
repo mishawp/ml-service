@@ -1,6 +1,7 @@
 from sqlmodel import Session, select
 from dataclasses import dataclass
 from models import Prediction, User, Cost, Chat
+from services.crud import ChatService
 
 
 @dataclass(slots=True)
@@ -28,6 +29,14 @@ class PredictionService:
     def read_by_chat_id(self, chat_id: int):
         return self.session.exec(
             select(Prediction).where(Prediction.chat_id == chat_id)
+        ).all()
+
+    def read_by_user_id(self, user_id: int):
+        chat_service = ChatService(self.session)
+        chats = chat_service.read_by_user_id(user_id)
+        chat_ids = [chat.chat_id for chat in chats]
+        return self.session.exec(
+            select(Prediction).where(Prediction.chat_id.in_(chat_ids))
         ).all()
 
     def read_all(self) -> list[Prediction]:
