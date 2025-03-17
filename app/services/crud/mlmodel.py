@@ -99,6 +99,11 @@ class MLModelService:
                         "status": "expired",
                         "response": "The server is busy",
                     }
+            else:
+                response_data = {
+                    "status": "undefined",
+                    "response": "The server is busy",
+                }
         else:
             response_body = message.body.decode()
             response_data = json.loads(response_body)

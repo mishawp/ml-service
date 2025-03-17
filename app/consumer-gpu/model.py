@@ -117,6 +117,9 @@ async def main() -> None:
     responses_queue = await channel.declare_queue("responses", durable=True)
 
     engine = create_engine(get_db_settings().DATABASE_URL_psycopg)
+    # engine = create_engine(
+    #     get_db_settings().DATABASE_URL_test.replace("localhost", "database")
+    # )
 
     await requests_queue.consume(
         lambda message: process_message(message, channel, engine)

@@ -116,39 +116,6 @@ async def make_prediction(
         }
 
 
-async def wait_predict(
-    username: str,
-    chat_id: int,
-    mlmodel_service: MLModelService,
-    prediction_service: PredictionService,
-):
-    """ожидание появления ответа от mlmodel в responses_queue."""
-    correlation_id = get_correlation_id(username, chat_id)
-    # пока запрос находится в очереди запросов
-    if mlmodel_input := MLModelService.get_request(correlation_id):
-        # попытка получить ответ
-        mlmodel_response = await mlmodel_service.receive_ml_task(
-            chat_id=chat_id
-        )
-        if mlmodel_response["status"] == "completed":
-            # заносим в бд. Это лучше делать на стороне consumer,
-            # как только модель дала ответ, чтобы этот сервис не перегружался,
-            # тут же ожидать статуса выполнения.
-            # Но это много переписывать, поэтому пускай на этот раз будет так
-            prediction = prediction_service.read_by_id(
-                mlmodel_response["response"]
-            )
-            # внутри MLModelService не создается Prediction
-            # там хранится словарь с status, model_out, model_id
-            # после появления записи в бд
-            # этот словарь я заменяю на запись из бд
-            prediction_dict = prediction.__dict__
-            prediction_dict["status"] = "completed"
-            return prediction_dict
-        else:
-            return mlmodel_response
-
-
 @route.get("/prediction/status")
 async def check_prediction_status(
     chat_id: int,
@@ -185,6 +152,11 @@ async def check_prediction_status(
             return {
                 "status": "negative balance",
                 "response": "Negative balance",
+            }
+        elif mlmodel_response["status"] == "undefined":
+            return {
+                "status": "undefined",
+                "response": "undefined error",
             }
     else:
         return {"status": "processing", "response": "processing"}

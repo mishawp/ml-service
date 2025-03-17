@@ -42,12 +42,14 @@ services:
   database:
     image: postgres:16-alpine
     volumes:
+      - ./init-database.sh:/docker-entrypoint-initdb.d/init-database.sh
       - ./postgres_data:/var/lib/postgresql/data/
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
-      - PGPASSWORD=${POSTGRES_PASSWORD}
+      # - PGPASSWORD=${POSTGRES_PASSWORD} # если без скрипта
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD} # если с скриптом
       - POSTGRES_DB=${POSTGRES_DB}
 
   consumer:

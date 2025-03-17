@@ -5,24 +5,31 @@ import aio_pika
 import os
 from dotenv import load_dotenv
 from aio_pika.abc import AbstractChannel
-from sqlmodel import Session, SQLModel, create_engine
+from sqlmodel import Session, SQLModel, create_engine, text
 from sqlmodel.pool import StaticPool
 
 from main import app
+from database.config import get_db_settings
 from database.database import get_session
 from rabbitmq.rabbitmq import get_channel
 
 
 @pytest.fixture(name="session")
 def session_fixture():
-    engine = create_engine(
-        "sqlite://",
-        connect_args={"check_same_thread": False},
-        poolclass=StaticPool,
-    )
+    settings = get_db_settings()
+    engine = create_engine(settings.DATABASE_URL_test, poolclass=StaticPool)
     SQLModel.metadata.create_all(engine)
     with Session(engine) as session:
         yield session
+
+    with engine.connect() as connection:
+        connection.execute(text('DROP TABLE IF EXISTS "user" CASCADE'))
+        connection.execute(text('DROP TABLE IF EXISTS "admin" CASCADE'))
+        connection.execute(text("DROP TABLE IF EXISTS payment CASCADE"))
+        connection.execute(text("DROP TABLE IF EXISTS chat CASCADE"))
+        connection.execute(text("DROP TABLE IF EXISTS cost CASCADE"))
+        connection.execute(text("DROP TABLE IF EXISTS prediction CASCADE"))
+        connection.commit()
 
 
 @pytest_asyncio.fixture(name="channel")
